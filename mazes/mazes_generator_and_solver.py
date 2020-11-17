@@ -4,44 +4,73 @@ import pygame
 import random
 import sys
 
+from mazes.button import button
+
+size = 10
+
+# the size of the maze in both the horizontal direction as well as the vertical
+# the grid which will hold information about the maze
+grid = [[0 for j in range(size)] for i in range(size)]
+
+# for determining which algorithm to use for finding the path
+# 1 -> Dijkstra's algorithm
+# 2 -> Simple DFS
+algorithm = 2
+
+# a dictionary of the coordinates and the walls to their cardinal directions
+walls = {i: {j: {d: True for d in ['n', 'e', 's', 'w']} for j in range(size)} for i in range(size)}
+
+# cardinal directions' inverses
+directions_inverses = {'w': 'e', 'e': 'w', 'n': 's', 's': 'n'}
+
+# for determining whether the steps of generation are to be shown
+show_map_generation_steps = False
+
+# the speed of drawing the path
+path_drawing_speed = 128
+
+# for determining whether the start is being selected or the finish
+start_picked = False
+# will hold the coordinates of the starting point
+start = ()
+
+# the width of a maze's cell
+width = 25
+
+# the padding to the 4 corners of the maze
+padding = 8
+# the window's dimensions
+display_dimension_width = padding + width * size + padding
+display_dimension_height = padding + width * size + padding
+
+# initiating the canvas's windows
+pygame.init()
+# creating a canvas
+screen = pygame.display.set_mode([display_dimension_width, display_dimension_height])
+# the clock object which specifies how fast the screen updates
+clock = pygame.time.Clock()
+
 
 def visited_mappings():
     return {i: {j: False for j in range(size)} for i in range(size)}
 
 
-size = 16
-grid = [[0 for j in range(size)] for i in range(size)]
+def get_neighbours(i, j, with_walls=True):
+    if with_walls:
+        neighbors = [
+            (i, j + 1, walls[i][j]['e']),
+            (i, j - 1, walls[i][j]['w']),
+            (i - 1, j, walls[i][j]['n']),
+            (i + 1, j, walls[i][j]['s'])
+        ]
+    else:
+        neighbors = [
+            (i, j + 1),
+            (i, j - 1),
+            (i - 1, j),
+            (i + 1, j)
+        ]
 
-algo = 2
-
-walls = {i: {j: {d: True for d in ['n', 'e', 's', 'w']} for j in range(size)} for i in range(size)}
-
-inverse = {'w': 'e', 'e': 'w', 'n': 's', 's': 'n'}
-
-# for determining whether the start is being selected or the finish
-start_picked = False
-start = ()
-
-# pygame variables
-width = 32
-padding = 8
-display_dimension_width = padding + width * size + padding
-display_dimension_height = padding + width * size + padding
-
-# pygame
-pygame.init()
-pygame.display.set_caption('A maze generator and solver using depth-first search')
-screen = pygame.display.set_mode([display_dimension_width, display_dimension_height])
-clock = pygame.time.Clock()
-
-
-def get_neighbours(i, j):
-    neighbors = [
-        (i, j + 1, walls[i][j]['e']),
-        (i, j - 1, walls[i][j]['w']),
-        (i - 1, j, walls[i][j]['n']),
-        (i + 1, j, walls[i][j]['s'])
-    ]
     return neighbors
 
 
@@ -63,7 +92,7 @@ def find_path_in_maze(i, j, maze_grid, visited):
 
     for ni, nj, wall in neighbors:
 
-        if not wall and not visited[ni][nj]:
+        if valid(ni, nj, visited) and not wall and not visited[ni][nj]:
             if ni in range(len(maze_grid)) and nj in range(len(maze_grid[ni])):
                 if find_path_in_maze(ni, nj, maze_grid, visited):
                     return True
@@ -71,8 +100,9 @@ def find_path_in_maze(i, j, maze_grid, visited):
     maze_grid[i][j] = 0
 
 
-def generate_maze(i, j, visited):
-    draw_maze(200)
+def generate_maze(i, j, visited, draw_steps=False):
+    if draw_steps:
+        draw_maze()
     if i not in range(len(grid)) or j not in range(len(grid[i])) or visited[i][j]:
         return
     visited[i][j] = True
@@ -81,22 +111,24 @@ def generate_maze(i, j, visited):
     for n_i, n_j, n_d in order_of_visiting:
         if n_i in range(0, len(grid)) and n_j in range(0, len(grid[n_i])) and not visited[n_i][n_j]:
             walls[i][j][n_d] = False
-            walls[n_i][n_j][inverse[n_d]] = False
+            walls[n_i][n_j][directions_inverses[n_d]] = False
 
             grid[i][j] = 3
             grid[n_i][n_j] = 3
 
-            generate_maze(n_i, n_j, visited)
+            generate_maze(n_i, n_j, visited, show_map_generation_steps)
 
             grid[n_i][n_j] = 0
             grid[i][j] = 0
+            if draw_steps:
+                draw_maze()
 
 
 def setup_maze():
-    generate_maze(size // 2, size // 2, visited_mappings())
+    generate_maze(size // 2, size // 2, visited_mappings(), show_map_generation_steps)
 
 
-def draw_maze(frame_rate=9000):
+def draw_maze(frame_rate=99999):
     react_to_events()
 
     screen.fill('white')
@@ -112,8 +144,10 @@ def draw_maze(frame_rate=9000):
             # top-left
             top_left = (padding + width * x, padding + width * y)
 
+            rect_padding = 5
+
             # rectangle coordinates
-            rect = (padding + width * x + 1, padding + width * y + 1)
+            rect = (padding + width * x + rect_padding, padding + width * y + rect_padding)
 
             color = 'green'
 
@@ -127,7 +161,7 @@ def draw_maze(frame_rate=9000):
                 color = 'purple'
 
             if grid[y][x] != 0:
-                pygame.draw.rect(screen, color, rect + (width - 2, width - 2))
+                pygame.draw.rect(screen, color, rect + (width - rect_padding, width - rect_padding), 0)
 
             if walls[y][x]['e']:
                 pygame.draw.line(screen, 'black', top_right, bottom_right)
@@ -146,17 +180,19 @@ def valid(ni, nj, visited):
     return ni in range(len(visited)) and nj in range(len(visited[ni]))
 
 
-def bfs_on_maze(i, j, maze_grid, visited):
-    q = collections.deque()
+def bfs_on_maze(i, j, maze_grid, visited, path_drawing_speed=30):
+    frontier = collections.deque()
 
     parents = {}
 
-    q += [(i, j)]
+    frontier += [(i, j)]
+
+    path = collections.deque()
 
     dest_i, dest_j = None, None
 
-    while q:
-        curr_ni, curr_nj = q.popleft()
+    while frontier:
+        curr_ni, curr_nj = frontier.popleft()
 
         if maze_grid[curr_ni][curr_nj] == 2:
             dest_i, dest_j = curr_ni, curr_nj
@@ -175,9 +211,7 @@ def bfs_on_maze(i, j, maze_grid, visited):
             if valid(ni, nj, visited):
                 if not visited[ni][nj] and not wall:
                     parents[(ni, nj)] = (curr_ni, curr_nj)
-                    q += [(ni, nj)]
-
-    path = collections.deque()
+                    frontier += [(ni, nj)]
 
     if dest_i is not None and dest_j is not None:
         curr = (dest_i, dest_j)
@@ -186,10 +220,12 @@ def bfs_on_maze(i, j, maze_grid, visited):
             path += [parents[curr]]
             curr = parents[curr]
 
+    path.reverse()
+
     for i, j in path:
         if maze_grid[i][j] not in range(1, 3):
             maze_grid[i][j] = 4
-            draw_maze(16)
+            draw_maze(path_drawing_speed)
 
     for i in range(size):
         for j in range(size):
@@ -216,10 +252,11 @@ def react_to_events():
 
                     i, j = start
 
-                    if algo == 1:
+                    if algorithm == 1:
+                        pygame.display.set_caption('A maze generator and solver using depth-first search')
                         find_path_in_maze(i, j, grid, visited_mappings())
-                    elif algo == 2:
-                        pygame.display.set_caption('A maze generator and solver using BFS search')
+                    elif algorithm == 2:
+                        pygame.display.set_caption("A maze generator and solver using Dijkstra's algorithm")
                         bfs_on_maze(i, j, grid, visited_mappings())
                 else:
                     grid = [[0 for j in range(size)] for i in range(size)]
@@ -235,6 +272,8 @@ if __name__ == '__main__':
         react_to_events()
 
         screen.fill('white')
+
+        button('black', 100, 100, 0, 0)
 
         draw_maze()
 
