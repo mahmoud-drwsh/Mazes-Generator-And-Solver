@@ -1,18 +1,20 @@
+import collections
+
 import pygame
 import random
 import sys
 
 
-def initialize_visited():
+def visited_mappings():
     return {i: {j: False for j in range(size)} for i in range(size)}
 
 
-size = 32
+size = 16
 grid = [[0 for j in range(size)] for i in range(size)]
 
-walls = {i: {j: {d: True for d in ['n', 'e', 's', 'w']} for j in range(size)} for i in range(size)}
+algo = 2
 
-visited = initialize_visited()
+walls = {i: {j: {d: True for d in ['n', 'e', 's', 'w']} for j in range(size)} for i in range(size)}
 
 inverse = {'w': 'e', 'e': 'w', 'n': 's', 's': 'n'}
 
@@ -21,7 +23,7 @@ start_picked = False
 start = ()
 
 # pygame variables
-width = 19
+width = 32
 padding = 8
 display_dimension_width = padding + width * size + padding
 display_dimension_height = padding + width * size + padding
@@ -33,10 +35,20 @@ screen = pygame.display.set_mode([display_dimension_width, display_dimension_hei
 clock = pygame.time.Clock()
 
 
-def find_path_in_maze(i, j, grid, visited):
-    if i not in range(0, len(grid)) or j not in range(0, len(grid[i])) or visited[i][j]:
+def get_neighbours(i, j):
+    neighbors = [
+        (i, j + 1, walls[i][j]['e']),
+        (i, j - 1, walls[i][j]['w']),
+        (i - 1, j, walls[i][j]['n']),
+        (i + 1, j, walls[i][j]['s'])
+    ]
+    return neighbors
+
+
+def find_path_in_maze(i, j, maze_grid, visited):
+    if i not in range(0, len(maze_grid)) or j not in range(0, len(maze_grid[i])) or visited[i][j]:
         return False
-    if grid[i][j] == 2:
+    if maze_grid[i][j] == 2:
         draw_maze()
         return True
 
@@ -45,27 +57,22 @@ def find_path_in_maze(i, j, grid, visited):
     draw_maze()
 
     if not (i == start[0] and j == start[1]):
-        grid[i][j] = 3
+        maze_grid[i][j] = 3
 
-    neighbors = [
-        (i, j + 1, walls[i][j]['e']),
-        (i, j - 1, walls[i][j]['w']),
-        (i - 1, j, walls[i][j]['n']),
-        (i + 1, j, walls[i][j]['s'])
-    ]
+    neighbors = get_neighbours(i, j)
 
     for ni, nj, wall in neighbors:
 
         if not wall and not visited[ni][nj]:
-            if ni in range(len(grid)) and nj in range(len(grid[ni])):
-                if find_path_in_maze(ni, nj, grid, visited):
+            if ni in range(len(maze_grid)) and nj in range(len(maze_grid[ni])):
+                if find_path_in_maze(ni, nj, maze_grid, visited):
                     return True
 
-    grid[i][j] = 0
+    maze_grid[i][j] = 0
 
 
 def generate_maze(i, j, visited):
-    draw_maze()
+    draw_maze(200)
     if i not in range(len(grid)) or j not in range(len(grid[i])) or visited[i][j]:
         return
     visited[i][j] = True
@@ -86,8 +93,7 @@ def generate_maze(i, j, visited):
 
 
 def setup_maze():
-    visited = initialize_visited()
-    generate_maze(0, 0, visited.copy())
+    generate_maze(size // 2, size // 2, visited_mappings())
 
 
 def draw_maze(frame_rate=9000):
@@ -105,15 +111,23 @@ def draw_maze(frame_rate=9000):
             bottom_left = (padding + width * x, padding + width + width * y)
             # top-left
             top_left = (padding + width * x, padding + width * y)
+
             # rectangle coordinates
             rect = (padding + width * x + 1, padding + width * y + 1)
 
+            color = 'green'
+
             if grid[y][x] == 1:
-                pygame.draw.rect(screen, 'green', rect + (width - 1, width - 1))
+                color = 'green'
             if grid[y][x] == 2:
-                pygame.draw.rect(screen, 'red', rect + (width - 1, width - 1))
+                color = 'red'
             if grid[y][x] == 3:
-                pygame.draw.rect(screen, 'yellow', rect + (width - 1, width - 1))
+                color = 'yellow'
+            if grid[y][x] == 4:
+                color = 'purple'
+
+            if grid[y][x] != 0:
+                pygame.draw.rect(screen, color, rect + (width - 2, width - 2))
 
             if walls[y][x]['e']:
                 pygame.draw.line(screen, 'black', top_right, bottom_right)
@@ -128,8 +142,64 @@ def draw_maze(frame_rate=9000):
     clock.tick(frame_rate)
 
 
+def valid(ni, nj, visited):
+    return ni in range(len(visited)) and nj in range(len(visited[ni]))
+
+
+def bfs_on_maze(i, j, maze_grid, visited):
+    q = collections.deque()
+
+    parents = {}
+
+    q += [(i, j)]
+
+    dest_i, dest_j = None, None
+
+    while q:
+        curr_ni, curr_nj = q.popleft()
+
+        if maze_grid[curr_ni][curr_nj] == 2:
+            dest_i, dest_j = curr_ni, curr_nj
+            break
+
+        visited[curr_ni][curr_nj] = True
+
+        if maze_grid[curr_ni][curr_nj] != 1:
+            maze_grid[curr_ni][curr_nj] = 3
+
+        draw_maze()
+
+        neighbours = get_neighbours(curr_ni, curr_nj)
+
+        for ni, nj, wall in neighbours:
+            if valid(ni, nj, visited):
+                if not visited[ni][nj] and not wall:
+                    parents[(ni, nj)] = (curr_ni, curr_nj)
+                    q += [(ni, nj)]
+
+    path = collections.deque()
+
+    if dest_i is not None and dest_j is not None:
+        curr = (dest_i, dest_j)
+        path += [curr]
+        while parents.__contains__(curr):
+            path += [parents[curr]]
+            curr = parents[curr]
+
+    for i, j in path:
+        if maze_grid[i][j] not in range(1, 3):
+            maze_grid[i][j] = 4
+            draw_maze(16)
+
+    for i in range(size):
+        for j in range(size):
+            if maze_grid[i][j] == 3:
+                maze_grid[i][j] = 0
+    pass
+
+
 def react_to_events():
-    global start_picked, visited, grid, start
+    global start_picked, grid, start
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -146,8 +216,11 @@ def react_to_events():
 
                     i, j = start
 
-                    visited = initialize_visited()
-                    find_path_in_maze(i, j, grid, visited)
+                    if algo == 1:
+                        find_path_in_maze(i, j, grid, visited_mappings())
+                    elif algo == 2:
+                        pygame.display.set_caption('A maze generator and solver using BFS search')
+                        bfs_on_maze(i, j, grid, visited_mappings())
                 else:
                     grid = [[0 for j in range(size)] for i in range(size)]
                     grid[i][j] = 1
