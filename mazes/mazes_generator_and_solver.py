@@ -13,19 +13,19 @@ from pygame import font
 from mazes.button import button
 
 # the size of the maze
-size = 25
+size = 21
 
 # the width of each cell
-width = 23
+width = 32
 
 # the width of a maze's cells' walls
-line_width = 1
+line_width = 4
+
+# for determining whether to generate a maze or not
+generate_maze = True
 
 # for determining whether the steps of generation are to be shown
 show_map_generation_steps = False
-
-# for determining whether to generate a maze or not
-generate_maze = False
 
 # background color
 fill_color = 'black'
@@ -33,9 +33,14 @@ fill_color = 'black'
 # walls color
 walls_color = 'white'
 
+
+def generate_maze_grid():
+    return [[0 for j in range(size)] for i in range(size)]
+
+
 # the size of the maze in both the horizontal direction as well as the vertical
 # the grid which will hold information about the maze
-grid = [[0 for j in range(size)] for i in range(size)]
+grid = generate_maze_grid()
 
 # for determining which algorithm to use for finding the path
 # 1 -> Simple DFS
@@ -44,8 +49,12 @@ grid = [[0 for j in range(size)] for i in range(size)]
 algorithm = 3
 
 
+def generate_walls_mappings():
+    return {i: {j: {d: generate_maze for d in ['n', 'e', 's', 'w']} for j in range(size)} for i in range(size)}
+
+
 # a dictionary of the coordinates and the walls to their cardinal directions
-walls = {i: {j: {d: generate_maze for d in ['n', 'e', 's', 'w']} for j in range(size)} for i in range(size)}
+walls = generate_walls_mappings()
 
 # cardinal directions' inverses
 directions_inverses = {'w': 'e', 'e': 'w', 'n': 's', 's': 'n'}
@@ -129,7 +138,10 @@ def generate_maze(i, j, visited, draw_steps=False):
 
 
 def setup_maze():
+    global grid, walls
     # generate_maze(size // 2, size // 2, visited_mappings(), show_map_generation_steps)
+    grid = generate_maze_grid()
+    walls = generate_walls_mappings()
     generate_maze(0, 0, visited_mappings(), show_map_generation_steps)
 
 
@@ -253,6 +265,7 @@ def draw_maze(frame_rate=10240):
     draw_button(0, 'DFS')
     draw_button(1, "BFS")
     draw_button(2, "A*")
+    draw_button(3, "Regen")
 
     for y in range(size):
         for x in range(size):
@@ -271,7 +284,7 @@ def draw_maze(frame_rate=10240):
             rect = (padding + width * x + rect_padding, padding + width * y + rect_padding)
 
             # circle information
-            circle_radius = (width // 2) - line_width * 1.5
+            circle_radius = (width // 2) - line_width * 2
 
             circle_center = (
                 padding + (width * x) + (width // 2) + line_width,
@@ -314,14 +327,19 @@ def draw_maze(frame_rate=10240):
 
 
 def draw_button(button_number, text='hello'):
-    x_coordinate = padding + (display_dimension_width // 3) * button_number
+    x_coordinate = padding + (display_dimension_width // 4) * button_number
     y_coordinate = display_dimension_height - width * 2
-    rect_width = ((display_dimension_width - padding * 2) // 3) - padding
+    rect_width = ((display_dimension_width - padding * 2) // 4) - padding - line_width
     rect_height = width * 2 - padding
+
+    color = walls_color
+
+    if button_number == algorithm - 1:
+        color = 'purple'
 
     pygame.draw.rect(
         screen,
-        walls_color,
+        color,
         [x_coordinate,
          y_coordinate,
          rect_width,
@@ -329,9 +347,9 @@ def draw_button(button_number, text='hello'):
          ]
     )
 
-    color = 'black'
-    f = font.SysFont(None, width * 2).render(text, True, color)
-    screen.blit(f, (x_coordinate + (rect_width // 3), y_coordinate))
+    f = font.SysFont('didot.ttc', int(width * 0.9)).render(text, True, 'black')
+
+    screen.blit(f, (x_coordinate + padding, y_coordinate + width // 2))
 
 
 def draw_path(dest_i, dest_j, maze_grid, parents, path, path_drawing_speed):
@@ -394,7 +412,7 @@ def react_to_events():
                     start = (i, j)
 
             else:
-                third = display_dimension_width // 3
+                third = display_dimension_width // 4
                 region = x // third
                 if region == 0:
                     algorithm = 1
@@ -402,6 +420,8 @@ def react_to_events():
                     algorithm = 2
                 elif region == 2:
                     algorithm = 3
+                elif region == 3:
+                    setup_maze()
 
 
 def clicked_within_the_maze(x, y):
