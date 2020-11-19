@@ -12,17 +12,38 @@ from pygame import font
 
 from mazes.button import button
 
+
+class Maze:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.grid = self.initiate_grid(width, height)
+        self.walls = self.construct_walls(width, height)
+
+    def initiate_grid(self, width, height):
+        return [[0 for _j in range(width)] for _i in range(height)]
+
+    def construct_walls(self, width, height):
+        return {i: {j: {d: True for d in ['n', 'e', 's', 'w']} for j in range(width)} for i in range(height)}
+
+    def reconstruct_the_walls(self):
+        self.walls = self.construct_walls(self.width, self.height)
+
+    def clean_grid(self):
+        self.grid = self.initiate_grid(self.width, self.height)
+
+
 # the size of the maze
-size = 21
+size = 32
 
 # the width of each cell
-width = 32
+width = 16
 
 # the width of a maze's cells' walls
-line_width = 4
+line_width = 1
 
 # for determining whether to generate a maze or not
-generate_maze = True
+construct_walls = False
 
 # for determining whether the steps of generation are to be shown
 show_map_generation_steps = False
@@ -49,12 +70,12 @@ grid = generate_maze_grid()
 algorithm = 3
 
 
-def generate_walls_mappings():
-    return {i: {j: {d: generate_maze for d in ['n', 'e', 's', 'w']} for j in range(size)} for i in range(size)}
+def generate_walls_mappings(construct_walls):
+    return {i: {j: {d: construct_walls for d in ['n', 'e', 's', 'w']} for j in range(size)} for i in range(size)}
 
 
 # a dictionary of the coordinates and the walls to their cardinal directions
-walls = generate_walls_mappings()
+walls = generate_walls_mappings(construct_walls)
 
 # cardinal directions' inverses
 directions_inverses = {'w': 'e', 'e': 'w', 'n': 's', 's': 'n'}
@@ -79,7 +100,7 @@ display_dimension_height = 2 * padding + width * size + width * 2
 pygame.init()
 # creating a canvas
 screen = pygame.display.set_mode([display_dimension_width, display_dimension_height])
-pygame.display.set_caption('maze generator')
+pygame.display.set_caption('Random Maze Generator By Mahmoud Darwish')
 # the clock object which specifies how fast the screen updates
 clock = pygame.time.Clock()
 
@@ -138,10 +159,10 @@ def generate_maze(i, j, visited, draw_steps=False):
 
 
 def setup_maze():
-    global grid, walls
+    global grid, walls, construct_walls
     # generate_maze(size // 2, size // 2, visited_mappings(), show_map_generation_steps)
     grid = generate_maze_grid()
-    walls = generate_walls_mappings()
+    walls = generate_walls_mappings(construct_walls)
     generate_maze(0, 0, visited_mappings(), show_map_generation_steps)
 
 
@@ -265,7 +286,7 @@ def draw_maze(frame_rate=10240):
     draw_button(0, 'DFS')
     draw_button(1, "BFS")
     draw_button(2, "A*")
-    draw_button(3, "Regen")
+    draw_button(3, "Regenerate")
 
     for y in range(size):
         for x in range(size):
@@ -284,15 +305,11 @@ def draw_maze(frame_rate=10240):
             rect = (padding + width * x + rect_padding, padding + width * y + rect_padding)
 
             # circle information
-            circle_radius = (width // 2) - line_width * 2
+            circle_radius = (width // 2) - line_width * 1.3
 
             circle_center = (
-                padding + (width * x) + (width // 2) + line_width,
-                padding + (width * y) + (width // 2) + line_width)
-
-            # circle_center = (
-            #     padding + (width * x) + (width // 2),
-            #     padding + (width * y) + (width // 2))
+                padding + (width * x) + ((width + line_width) // 2),
+                padding + (width * y) + ((width + line_width) // 2))
 
             color = '#ff1744'
 
@@ -347,7 +364,7 @@ def draw_button(button_number, text='hello'):
          ]
     )
 
-    f = font.SysFont('didot.ttc', int(width * 0.9)).render(text, True, 'black')
+    f = font.SysFont('didot.ttc', int(width)).render(text, True, 'black')
 
     screen.blit(f, (x_coordinate + padding, y_coordinate + width // 2))
 
@@ -396,13 +413,15 @@ def react_to_events():
                     i, j = start
 
                     if algorithm == 1:
-                        pygame.display.set_caption('A maze generator and solver using depth-first search')
+                        pygame.display.set_caption(
+                            'A maze generator and solver using depth-first search By Mahmoud Darwish')
                         dfs_find_path_in_maze(i, j, grid, visited_mappings())
                     elif algorithm == 2:
-                        pygame.display.set_caption("A maze generator and solver using Dijkstra's algorithm")
+                        pygame.display.set_caption(
+                            "A maze generator and solver using Dijkstra's algorithm By Mahmoud Darwish")
                         bfs_on_maze(i, j, grid, visited_mappings())
                     elif algorithm == 3:
-                        pygame.display.set_caption("A maze generator and solver using A* algorithm")
+                        pygame.display.set_caption("A maze generator and solver using A* algorithm By Mahmoud Darwish")
                         a_star_search(i, j, grid, visited_mappings())
 
                 else:
