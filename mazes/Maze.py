@@ -16,6 +16,7 @@ class Maze(object):
         self.goal = ()
         self.start_picked = False
         self.visited = self.__visited_mappings__()
+        self.grid = self.__initiate_grid__()
 
     def __initiate_grid__(self):
         return [[0 for _j in range(self.width)] for _i in range(self.height)]
@@ -35,7 +36,7 @@ class Maze(object):
     def mark_all_cells_not_visited(self):
         self.visited = self.__visited_mappings__()
 
-    def reconstruct_maze_grid(self):
+    def reconstruct_walls_and_clear_grid(self):
         self.clear_grid()
         self.walls = self.__construct_walls__()
         self.visited = self.__visited_mappings__()
