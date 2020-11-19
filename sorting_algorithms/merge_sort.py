@@ -1,5 +1,5 @@
 def mergeSort(nums: list):
-    # return if the list size is < 2
+    # return if the list maze_height is < 2
     if len(nums) == 1:
         return
 
