@@ -85,7 +85,7 @@ def try_something(grid, walls):
     # Open a new window
     pygame.display.set_caption("My First Game")
 
-    # The loop will carry on until the user exit the game (e.g. clicks the close button).
+    # The loop will carry on until the user exit the game (e.g. clicks the close Button).
     carry_on = True
 
     # -------- Main Program Loop -----------

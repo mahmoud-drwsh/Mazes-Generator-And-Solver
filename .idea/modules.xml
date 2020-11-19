@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/maze_generator_and_solver.iml" filepath="$PROJECT_DIR$/maze_generator_and_solver.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Search Algorithms Visualization.iml" filepath="$PROJECT_DIR$/Search Algorithms Visualization.iml" />
     </modules>
   </component>
 </project>

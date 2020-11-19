@@ -1,18 +1,15 @@
 import collections
 import heapq
-from math import sqrt
-
 import pygame
 import random
 import sys
 
-from pygame import font
-
 from mazes.Maze import Maze
+from mazes.button import Button
 
 # the maze dimensions
-maze_width = 57
-maze_height = int(maze_width / 16 * 8)
+maze_width = 65
+maze_height = int(maze_width / 16 * 7.5)
 
 # the maze
 maze = Maze(maze_width, maze_height)
@@ -21,7 +18,7 @@ maze = Maze(maze_width, maze_height)
 width = 23
 
 # the width of a maze's cells' walls
-line_width = 1
+line_width = 2
 
 # show a wall-less maze instead
 drop_maze_walls = False
@@ -31,6 +28,9 @@ maze.clear_all_walls(drop_maze_walls)
 
 # for determining whether the steps of generation are to be shown
 show_map_generation_steps = False
+
+# show the steps of search
+show_search_steps = True
 
 # background color
 fill_color = 'black'
@@ -48,7 +48,7 @@ algorithm = 3
 path_drawing_speed = 512
 
 # the padding to the 4 corners of the maze
-padding = 16
+padding = 8
 # the window's dimensions
 display_dimension_width = 2 * padding + width * maze_width
 display_dimension_height = 2 * padding + width * maze_height + width * 2
@@ -151,7 +151,8 @@ def dfs_find_path_in_maze(i, j):
 
     maze.mark_cell_visited(i, j)
 
-    draw_maze()
+    if show_search_steps:
+        draw_maze()
 
     if not (i == maze.start[0] and j == maze.start[1]):
         maze.grid[i][j] = Maze.SEARCHED_CELL
@@ -168,7 +169,8 @@ def dfs_find_path_in_maze(i, j):
 
     maze.grid[i][j] = Maze.EMPTY_CELL
 
-    # draw_maze()
+    # if show_search_steps:
+    #     draw_maze()
 
 
 def bfs_on_maze(i, j):
@@ -191,7 +193,8 @@ def bfs_on_maze(i, j):
 
         maze.mark_cell_visited(curr_ni, curr_nj)
 
-        draw_maze()
+        if show_search_steps:
+            draw_maze()
 
         if maze.grid[curr_ni][curr_nj] == Maze.GOAL_CELL:
             dest_i, dest_j = curr_ni, curr_nj
@@ -236,7 +239,8 @@ def a_star_search(i, j):
         if maze.grid[curr_ni][curr_nj] != Maze.START_CELL:
             maze.grid[curr_ni][curr_nj] = Maze.SEARCHED_CELL
 
-        draw_maze()
+        if show_search_steps:
+            draw_maze()
 
         neighbours = maze.get_cell_neighbours(curr_ni, curr_nj)
 
@@ -249,14 +253,11 @@ def a_star_search(i, j):
 
 
 def draw_maze(frame_rate=10240):
-    react_to_events()
-
     screen.fill(fill_color)
 
-    draw_button(0, 'DFS')
-    draw_button(1, "BFS")
-    draw_button(2, "A*")
-    draw_button(3, "Regenerate")
+    buttons = get_drawn_buttons()
+
+    react_to_events(buttons)
 
     for y in range(maze_height):
         for x in range(maze_width):
@@ -313,30 +314,35 @@ def draw_maze(frame_rate=10240):
     clock.tick(frame_rate)
 
 
-def draw_button(button_number, text=''):
-    x_coordinate = padding * 2 + (display_dimension_width // 4) * button_number
-    y_coordinate = display_dimension_height - width * 2
-    rect_width = ((display_dimension_width - padding * 2) // 4) - padding * 3
-    rect_height = width * 2 - padding
+def get_drawn_buttons():
+    buttons = draw_buttons(['DFS', "BFS", "A*", "Regenerate", "Toggle Walls", "Show Steps"])
+    [b.draw(screen) for b in buttons]
+    return buttons
 
-    color = walls_color
 
-    if button_number == algorithm - 1:
-        color = 'purple'
+def draw_buttons(text):
+    buttons = []
 
-    pygame.draw.rect(
-        screen,
-        color,
-        [x_coordinate,
-         y_coordinate,
-         rect_width,
-         rect_height
-         ]
-    )
+    for i in range(len(text)):
+        x_coordinate = padding + (display_dimension_width // len(text)) * i
+        y_coordinate = display_dimension_height - width * 2
+        rect_width = ((display_dimension_width - padding) // len(text)) - padding
+        rect_height = width * 2 - padding
 
-    f = font.SysFont('didot.ttc', int(width)).render(text, True, (0, 0, 0))
+        buttons += [
+            Button(
+                'purple'
+                if i == algorithm - 1 or (i == 4 and not drop_maze_walls) or (i == 5 and show_search_steps)
+                else 'white',
+                x_coordinate,
+                y_coordinate,
+                rect_width,
+                rect_height,
+                text[i]
+            )
+        ]
 
-    screen.blit(f, (x_coordinate + padding, y_coordinate + width // 2))
+    return buttons
 
 
 def draw_path(dest_i, dest_j, parents, path):
@@ -358,10 +364,12 @@ def draw_path(dest_i, dest_j, parents, path):
     for i, j in path:
         if maze.grid[i][j] not in range(1, 3) and not maze.start_picked:
             maze.grid[i][j] = 4
-            draw_maze()
+
+            if show_search_steps:
+                draw_maze()
 
 
-def react_to_events():
+def react_to_events(buttons):
     global algorithm
 
     for event in pygame.event.get():
@@ -371,10 +379,10 @@ def react_to_events():
             sys.exit()
 
         if event.type == pygame.MOUSEBUTTONUP:
-            react_to_mouse_click()
+            react_to_mouse_click(buttons)
 
 
-def react_to_mouse_click():
+def react_to_mouse_click(buttons):
     global algorithm
 
     x, y = pygame.mouse.get_pos()
@@ -411,17 +419,22 @@ def react_to_mouse_click():
             maze.grid[i][j] = Maze.START_CELL
             maze.start = (i, j)
 
-    elif y > display_dimension_height - width * 2:
-        third = display_dimension_width // 4
-        region = x // third
-        if region == 0:
+    else:
+        if buttons[0].isOver((x, y)):
             algorithm = 1
-        elif region == 1:
+        elif buttons[1].isOver((x, y)):
             algorithm = 2
-        elif region == 2:
+        elif buttons[2].isOver((x, y)):
             algorithm = 3
-        elif region == 3:
+        elif buttons[3].isOver((x, y)):
             setup_maze()
+        elif buttons[4].isOver((x, y)):
+            global drop_maze_walls
+            drop_maze_walls = not drop_maze_walls
+            setup_maze()
+        elif buttons[5].isOver((x, y)):
+            global show_search_steps
+            show_search_steps = not show_search_steps
 
 
 def clicked_within_the_maze(x, y):
@@ -432,7 +445,7 @@ if __name__ == '__main__':
     setup_maze()
 
     while True:
-        react_to_events()
+        react_to_events(get_drawn_buttons())
 
         draw_maze()
 
