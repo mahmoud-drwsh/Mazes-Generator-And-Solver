@@ -1,3 +1,4 @@
+بسم الله الرحمن الرحيم
 # A maze generator program and a solver agent implemented in Python using Pygame
 ----
 
