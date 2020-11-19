@@ -1,5 +1,4 @@
-# maze_generator_and_solver
-a maze generator program and a solver agent implemented in python
+#a maze generator program and a solver agent implemented in Python using Pygame
 ----
 
-#### This project is one of the AI class assignments
+#### This project is one of the AI class's assignments
