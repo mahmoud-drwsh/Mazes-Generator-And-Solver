@@ -82,7 +82,7 @@ class Maze(object):
         self.mark_all_cells_not_visited()
 
     def clear_all_walls(self, without_walls=False):
-        # self.walls = self.__construct_walls__(without_walls)
+        self.drop_all_walls()
         pass
 
     def get_cell_neighbours(self, i, j, with_walls=True):
