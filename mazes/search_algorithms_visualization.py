@@ -8,14 +8,14 @@ from mazes.Maze import Maze
 from mazes.button import Button
 
 # the maze dimensions
-maze_width = 65
+maze_width = 72
 maze_height = int(maze_width / 16 * 7.5)
 
 # the maze
 maze = Maze(maze_width, maze_height)
 
 # the width of each cell
-width = 23
+width = 21
 
 # the width of a maze's cells' walls
 line_width = 2
