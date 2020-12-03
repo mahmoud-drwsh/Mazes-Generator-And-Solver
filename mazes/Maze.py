@@ -41,16 +41,7 @@ class Maze(object):
                      else Maze.EMPTY_CELL
                      for _j in range(self.width)] for _i in range(self.height)]
         else:
-            return [[Maze.EMPTY_CELL
-                     if
-                     _j == 0 or
-                     _i == 0 or
-                     _j == self.width - 1 or
-                     _i == self.height - 1 or
-                     _i % 2 == 0 or
-                     _j % 2 == 0
-                     else Maze.EMPTY_CELL
-                     for _j in range(self.width)] for _i in range(self.height)]
+            return [[Maze.EMPTY_CELL for _j in range(self.width)] for _i in range(self.height)]
 
     def __visited_mappings__(self):
         return {i: {j: False for j in range(self.width)} for i in range(self.height)}
@@ -141,12 +132,17 @@ class Maze(object):
         pass
 
     def get_cell_search_neighbours(self, i, j):
-        return [
+        return (
             (i, j + 1, self.grid[i][j + 1] == Maze.WALL_CELL),
             (i, j - 1, self.grid[i][j - 1] == Maze.WALL_CELL),
             (i - 1, j, self.grid[i - 1][j] == Maze.WALL_CELL),
-            (i + 1, j, self.grid[i + 1][j] == Maze.WALL_CELL)
-        ]
+            (i + 1, j, self.grid[i + 1][j] == Maze.WALL_CELL),
+            # diagonal neighbors
+            # (i + 1, j + 1, self.grid[i + 1][j + 1] == Maze.WALL_CELL),
+            # (i - 1, j + 1, self.grid[i - 1][j + 1] == Maze.WALL_CELL),
+            # (i + 1, j - 1, self.grid[i + 1][j - 1] == Maze.WALL_CELL),
+            # (i - 1, j - 1, self.grid[i - 1][j - 1] == Maze.WALL_CELL)
+        )
 
     def drop_all_walls(self):
         self.grid = self.__initiate_grid__(False)

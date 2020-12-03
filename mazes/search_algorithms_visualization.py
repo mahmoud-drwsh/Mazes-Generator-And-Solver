@@ -61,6 +61,8 @@ pygame.display.set_caption('Random Maze Generator By Mahmoud Darwish')
 # the clock object which specifies how fast the screen updates
 clock = pygame.time.Clock()
 
+show_buttons = True
+
 
 def generate_maze(i, j, draw_steps=False):
     if draw_steps:
@@ -184,8 +186,6 @@ def bfs_on_maze(i, j):
 
     frontier[(i, j)] = None
 
-    path = collections.deque()
-
     dest_i, dest_j = None, None
 
     while frontier and not maze.start_picked:
@@ -214,7 +214,7 @@ def bfs_on_maze(i, j):
                 parents[(ni, nj)] = (curr_ni, curr_nj)
                 frontier[(ni, nj)] = None
 
-    draw_path(dest_i, dest_j, parents, path)
+    draw_path(dest_i, dest_j, parents)
 
 
 def a_star_search(i, j):
@@ -223,8 +223,6 @@ def a_star_search(i, j):
     parents = {}
 
     heapq.heappush(frontier, (maze.distance_to_goal(i, j), i, j))
-
-    path = collections.deque()
 
     dest_i, dest_j = None, None
 
@@ -253,15 +251,15 @@ def a_star_search(i, j):
                 parents[(ni, nj)] = (curr_ni, curr_nj)
                 heapq.heappush(frontier, (maze.distance_to_goal(ni, nj), ni, nj))
 
-    draw_path(dest_i, dest_j, parents, path)
+    draw_path(dest_i, dest_j, parents)
 
 
-def draw_maze(frame_rate=10240):
+def draw_maze():
     screen.fill(fill_color)
 
-    buttons = get_drawn_buttons()
-
-    react_to_events(buttons)
+    if show_buttons:
+        buttons = get_drawn_buttons()
+        react_to_events(buttons)
 
     for y in range(maze.height):
         for x in range(maze.width):
@@ -301,25 +299,13 @@ def draw_maze(frame_rate=10240):
 
             pygame.draw.rect(screen, color, top_left + (width, width))
 
-            # if maze.grid[y][x] != Maze.EMPTY_CELL:
-            #     pygame.draw.rect(screen, color, top_left + (width, width))
-            #     pygame.draw.circle(screen, color, circle_center, circle_radius)
+            if x == 0 or x == maze.width - 1 or y == 0 or y == maze.height - 1:
+                pygame.draw.rect(screen, "#000000", top_left + (width, width))
 
-            # if maze.walls[y][x][Maze.EAST]:
-            #     pygame.draw.line(screen, walls_color, top_right, bottom_right, line_width)
-            # if maze.walls[y][x][Maze.SOUTH]:
-            #     pygame.draw.line(screen, walls_color, bottom_left, bottom_right, line_width)
-            # if x == 0:
-            #     pygame.draw.line(screen, walls_color, top_left, bottom_left, line_width)
-            # if x == maze_width - 1:
-            #     pygame.draw.line(screen, walls_color, top_right, bottom_right, line_width)
-            # if y == 0:
-            #     pygame.draw.line(screen, walls_color, top_left, top_right, line_width)
-            # if y == maze_height - 1:
-            #     pygame.draw.line(screen, walls_color, bottom_left, bottom_right, line_width)
+            # if x == 0 and y == 0:
+            #     pygame.draw.rect(screen, "green", top_left + (width, width))
 
     pygame.display.update()
-    clock.tick(frame_rate)
 
 
 def get_drawn_buttons():
@@ -353,7 +339,9 @@ def draw_buttons(text):
     return buttons
 
 
-def draw_path(dest_i, dest_j, parents, path):
+def draw_path(dest_i, dest_j, parents):
+    path = collections.deque()
+
     if dest_i is not None and dest_j is not None:
         curr = (dest_i, dest_j)
         path += [curr]
@@ -428,6 +416,10 @@ def react_to_mouse_click(buttons):
             maze.clear_grid()
             maze.grid[i][j] = Maze.START_CELL
             maze.start = (i, j)
+
+    elif x in range(width) and y in range(width):
+        global show_buttons
+        show_buttons = not show_buttons
 
     else:
         if buttons[0].isOver((x, y)):
