@@ -102,7 +102,7 @@ class Maze(object):
 
     def is_valid_cell(self, i, j):
         return i in range(self.height) and j in range(self.width) and not (
-                i == 0 or j == 0 or j == self.width - 1 or i == self.height - 1)
+            i == 0 or j == 0 or j == self.width - 1 or i == self.height - 1)
 
     def remove_the_wall_between_cells(self, i, j, neighbour_direction):
         neighbour_i, neighbour_j = -1, -1

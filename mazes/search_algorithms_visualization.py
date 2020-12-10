@@ -4,8 +4,8 @@ import pygame
 import random
 import sys
 
-from mazes.Maze import Maze
-from mazes.button import Button
+from Maze import Maze
+from button import Button
 
 # the maze dimensions
 maze_width = 60
@@ -56,7 +56,8 @@ display_dimension_height = width * maze.height + width * 2 + padding
 # initiating the canvas's windows
 pygame.init()
 # creating a canvas
-screen = pygame.display.set_mode([display_dimension_width, display_dimension_height])
+screen = pygame.display.set_mode(
+    [display_dimension_width, display_dimension_height])
 pygame.display.set_caption('Random Maze Generator By Mahmoud Darwish')
 # the clock object which specifies how fast the screen updates
 clock = pygame.time.Clock()
@@ -81,13 +82,15 @@ def generate_maze(i, j, draw_steps=False):
 
                 if not maze.visited_cell(neighbour_i, neighbour_j):
 
-                    maze.remove_the_wall_between_cells(i, j, neighbour_direction)
+                    maze.remove_the_wall_between_cells(
+                        i, j, neighbour_direction)
 
                     # to show where the generator has reached
                     maze.grid[i][j] = Maze.SEARCHED_CELL
                     maze.grid[neighbour_i][neighbour_j] = Maze.SEARCHED_CELL
 
-                    generate_maze(neighbour_i, neighbour_j, show_map_generation_steps)
+                    generate_maze(neighbour_i, neighbour_j,
+                                  show_map_generation_steps)
 
                     # backtrack
                     maze.grid[neighbour_i][neighbour_j] = Maze.EMPTY_CELL
@@ -132,7 +135,8 @@ def generate_maze_iteratively(i, j, draw_steps=False):
                         # show that the cell is in the stack
                         maze.grid[i][j] = Maze.SEARCHED_CELL
 
-                        maze.remove_the_wall_between_cells(i, j, neighbour_direction)
+                        maze.remove_the_wall_between_cells(
+                            i, j, neighbour_direction)
 
                         maze.mark_cell_visited(neighbour_i, neighbour_j)
 
@@ -249,7 +253,8 @@ def a_star_search(i, j):
         for ni, nj, wall in neighbours:
             if maze.is_valid_cell(ni, nj) and not maze.visited_cell(ni, nj) and not wall:
                 parents[(ni, nj)] = (curr_ni, curr_nj)
-                heapq.heappush(frontier, (maze.distance_to_goal(ni, nj), ni, nj))
+                heapq.heappush(
+                    frontier, (maze.distance_to_goal(ni, nj), ni, nj))
 
     draw_path(dest_i, dest_j, parents)
 
@@ -266,7 +271,8 @@ def draw_maze():
             # top-right
             top_right = (padding + width + width * x, padding + width * y)
             # bottom-right
-            bottom_right = (padding + width + width * x, padding + width + width * y)
+            bottom_right = (padding + width + width * x,
+                            padding + width + width * y)
             # bottom-left
             bottom_left = (padding + width * x, padding + width + width * y)
             # top-left
@@ -309,7 +315,8 @@ def draw_maze():
 
 
 def get_drawn_buttons():
-    buttons = draw_buttons(['DFS', "BFS", "A*", "Regenerate", "Toggle Walls", "Show Steps"])
+    buttons = draw_buttons(
+        ['DFS', "BFS", "A*", "Regenerate", "Toggle Walls", "Show Steps"])
     [b.draw(screen) for b in buttons]
     return buttons
 
@@ -320,7 +327,8 @@ def draw_buttons(text):
     for i in range(len(text)):
         x_coordinate = padding + (display_dimension_width // len(text)) * i
         y_coordinate = display_dimension_height - width * 2
-        rect_width = ((display_dimension_width - padding) // len(text)) - padding
+        rect_width = ((display_dimension_width - padding) //
+                      len(text)) - padding
         rect_height = width * 2 - padding
 
         buttons += [
@@ -383,6 +391,7 @@ def react_to_mouse_click(buttons):
     global algorithm, drop_maze_walls
 
     x, y = pygame.mouse.get_pos()
+
     i = (y // width)
     j = (x // width)
 
@@ -407,7 +416,8 @@ def react_to_mouse_click(buttons):
                     "A maze generator and solver using Dijkstra's algorithm By Mahmoud Darwish")
                 bfs_on_maze(i, j)
             elif algorithm == 3:
-                pygame.display.set_caption("A maze generator and solver using A* algorithm By Mahmoud Darwish")
+                pygame.display.set_caption(
+                    "A maze generator and solver using A* algorithm By Mahmoud Darwish")
                 a_star_search(i, j)
 
         else:
@@ -430,9 +440,11 @@ def react_to_mouse_click(buttons):
             algorithm = 3
         elif buttons[3].isOver((x, y)):
             if not drop_maze_walls:
+                maze.start_picked = not maze.start_picked
                 setup_maze()
         elif buttons[4].isOver((x, y)):
             drop_maze_walls = not drop_maze_walls
+            maze.start_picked = not maze.start_picked
             if drop_maze_walls:
                 maze.drop_all_walls()
             else:
