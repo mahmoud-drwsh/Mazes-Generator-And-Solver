@@ -78,73 +78,71 @@ def generate_maze(i, j, draw_steps=False):
 
         for neighbour_i, neighbour_j, neighbour_direction in neighbours:
 
-            if maze.is_valid_cell(neighbour_i, neighbour_j):
+            if maze.is_valid_cell(
+                neighbour_i, neighbour_j
+            ) and not maze.visited_cell(neighbour_i, neighbour_j):
 
-                if not maze.visited_cell(neighbour_i, neighbour_j):
+                maze.remove_the_wall_between_cells(
+                    i, j, neighbour_direction)
 
-                    maze.remove_the_wall_between_cells(
-                        i, j, neighbour_direction)
+                # to show where the generator has reached
+                maze.grid[i][j] = Maze.SEARCHED_CELL
+                maze.grid[neighbour_i][neighbour_j] = Maze.SEARCHED_CELL
 
-                    # to show where the generator has reached
-                    maze.grid[i][j] = Maze.SEARCHED_CELL
-                    maze.grid[neighbour_i][neighbour_j] = Maze.SEARCHED_CELL
+                generate_maze(neighbour_i, neighbour_j,
+                              show_map_generation_steps)
 
-                    generate_maze(neighbour_i, neighbour_j,
-                                  show_map_generation_steps)
+                # backtrack
+                maze.grid[neighbour_i][neighbour_j] = Maze.EMPTY_CELL
+                maze.grid[i][j] = Maze.EMPTY_CELL
 
-                    # backtrack
-                    maze.grid[neighbour_i][neighbour_j] = Maze.EMPTY_CELL
-                    maze.grid[i][j] = Maze.EMPTY_CELL
-
-                    if draw_steps:
-                        draw_maze()
+                if draw_steps:
+                    draw_maze()
 
 
 def generate_maze_iteratively(i, j, draw_steps=False):
     # iterative
-    if maze.is_valid_cell(i, j) and not maze.visited_cell(i, j):
+    if not maze.is_valid_cell(i, j) or maze.visited_cell(i, j):
 
-        stack = list()
+        return
+    stack = [(i, j)]
 
-        stack.append((i, j))
+    while stack:
+        if draw_steps:
+            draw_maze()
 
-        while stack:
-            if draw_steps:
-                draw_maze()
+        i, j = stack.pop()
 
-            i, j = stack.pop()
+        # show that the cell has been removed from the stack
+        maze.grid[i][j] = Maze.EMPTY_CELL
 
-            # show that the cell has been removed from the stack
-            maze.grid[i][j] = Maze.EMPTY_CELL
+        maze.mark_cell_visited(i, j)
 
-            maze.mark_cell_visited(i, j)
+        neighbours = [neighbour for neighbour in maze.get_cell_neighbours_and_directions(i, j)
+                      if
+                      maze.is_valid_cell(neighbour[0], neighbour[1]) and
+                      not maze.visited_cell(neighbour[0], neighbour[1])
+                      ]
 
-            neighbours = [neighbour for neighbour in maze.get_cell_neighbours_and_directions(i, j)
-                          if
-                          maze.is_valid_cell(neighbour[0], neighbour[1]) and
-                          not maze.visited_cell(neighbour[0], neighbour[1])
-                          ]
+        random.shuffle(neighbours)
 
-            random.shuffle(neighbours)
+        for neighbour_i, neighbour_j, neighbour_direction in neighbours:
+            if maze.is_valid_cell(
+                neighbour_i, neighbour_j
+            ) and not maze.visited_cell(neighbour_i, neighbour_j):
+                stack.append((i, j))
 
-            for neighbour_i, neighbour_j, neighbour_direction in neighbours:
-                if maze.is_valid_cell(neighbour_i, neighbour_j):
-                    if not maze.visited_cell(neighbour_i, neighbour_j):
-                        stack.append((i, j))
+                # show that the cell is in the stack
+                maze.grid[i][j] = Maze.SEARCHED_CELL
 
-                        # show that the cell is in the stack
-                        maze.grid[i][j] = Maze.SEARCHED_CELL
+                maze.remove_the_wall_between_cells(
+                    i, j, neighbour_direction)
 
-                        maze.remove_the_wall_between_cells(
-                            i, j, neighbour_direction)
+                maze.mark_cell_visited(neighbour_i, neighbour_j)
 
-                        maze.mark_cell_visited(neighbour_i, neighbour_j)
+                stack.append((neighbour_i, neighbour_j))
 
-                        stack.append((neighbour_i, neighbour_j))
-
-                        break
-
-    pass
+                break
 
 
 def setup_maze():
@@ -171,11 +169,15 @@ def dfs_find_path_in_maze(i, j):
 
     for ni, nj, wall in neighbors:
 
-        if maze.is_valid_cell(ni, nj) and not wall and not maze.visited_cell(ni, nj):
-            if dfs_find_path_in_maze(ni, nj):
-                if not maze.grid[i][j] == Maze.START_CELL:
-                    maze.grid[i][j] = Maze.PATH_CELL
-                return True
+        if (
+            maze.is_valid_cell(ni, nj)
+            and not wall
+            and not maze.visited_cell(ni, nj)
+            and dfs_find_path_in_maze(ni, nj)
+        ):
+            if maze.grid[i][j] != Maze.START_CELL:
+                maze.grid[i][j] = Maze.PATH_CELL
+            return True
 
     maze.grid[i][j] = Maze.EMPTY_CELL
 
@@ -367,7 +369,7 @@ def draw_path(dest_i, dest_j, parents):
 
     for i, j in path:
         if not maze.start_picked:
-            if maze.grid[i][j] != Maze.START_CELL and maze.grid[i][j] != Maze.GOAL_CELL:
+            if maze.grid[i][j] not in [Maze.START_CELL, Maze.GOAL_CELL]:
                 maze.grid[i][j] = Maze.PATH_CELL
 
             if show_search_steps:

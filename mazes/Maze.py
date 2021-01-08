@@ -74,25 +74,22 @@ class Maze(object):
 
     def clear_all_walls(self, without_walls=False):
         self.drop_all_walls()
-        pass
 
     def get_cell_neighbours(self, i, j, with_walls=True):
         if with_walls:
-            neighbors = [
+            return [
                 (i, j + 2, self.grid[i][j + 1] == Maze.WALL_CELL),
                 (i, j - 2, self.grid[i][j - 1] == Maze.WALL_CELL),
                 (i - 2, j, self.grid[i - 1][j] == Maze.WALL_CELL),
                 (i + 2, j, self.grid[i + 1][j] == Maze.WALL_CELL)
             ]
         else:
-            neighbors = [
+            return [
                 (i, j + 1),
                 (i, j - 1),
                 (i - 1, j),
                 (i + 1, j)
             ]
-
-        return neighbors
 
     def mark_cell_visited(self, i, j):
         self.visited[i][j] = True
@@ -118,7 +115,6 @@ class Maze(object):
 
         if self.is_a_wall_cell(neighbour_i, neighbour_j):
             self.grid[neighbour_i][neighbour_j] = Maze.EMPTY_CELL
-            pass
 
     @staticmethod
     def get_cell_neighbours_and_directions(i, j):
@@ -129,7 +125,6 @@ class Maze(object):
 
     def is_a_wall_cell(self, neighbour_i, neighbour_j):
         return neighbour_i % 2 == 0 or neighbour_j % 2 == 0
-        pass
 
     def get_cell_search_neighbours(self, i, j):
         return (
@@ -146,4 +141,3 @@ class Maze(object):
 
     def drop_all_walls(self):
         self.grid = self.__initiate_grid__(False)
-        pass
